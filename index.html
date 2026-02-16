@@ -7,6 +7,7 @@
 <body>
 <p id="issueType"></p>
 <script>
+console.log("script Loaded!");
 console.log(AdaptavistBridgeContext.context);
 
 AdaptavistBridge.request({
@@ -14,6 +15,7 @@ AdaptavistBridge.request({
     type: 'GET'
 })
     .then(issue => {
+        console.log("Issue Found!");
         console.log('issue', issue)
         document.getElementById("issueType").value = `${issue.key} is a ${issue.fields.issuetype.name} in ${issue.fields.status.name}`;
     });
