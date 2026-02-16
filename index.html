@@ -1,25 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Script Fragment Example</title>
-<script src="https://assets.hydrogen.sagittarius.connect.product.adaptavist.com/public/js/bridge.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Management Dashboard</title>
+    <style>
+        :root {
+            --primary-bg: #f8f9fa; --header-bg: #ffffff; --table-border: #dee2e6;
+            --text-color: #212529; --accent-color: #007bff; --hover-bg: #e9ecef;
+            --selected-bg: #cfe2ff; --secondary-action-color: #6c757d;
+            --false-positive-bg: #fbeae5; /* Color for false positive rows */
+        }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--primary-bg); color: var(--text-color); }
+        .app-container { padding: 2rem; max-width: 1600px; margin: 0 auto; } /* Increased max-width */
+        .app-header h1 { font-size: 2rem; font-weight: 600; margin-bottom: 2rem; text-align: center; }
+        .toolbar { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem; gap: 1rem; }
+        .action-button { padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 500; color: #fff; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; }
+        #cloneJiraTicket { background-color: var(--accent-color); }
+        #cloneJiraTicket:hover { background-color: #0056b3; }
+        #claimFalsePositive { background-color: var(--secondary-action-color); }
+        #claimFalsePositive:hover { background-color: #5a6268; }
+        .table-container { background-color: var(--header-bg); border: 1px solid var(--table-border); border-radius: 8px; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--table-border); white-space: nowrap; }
+        th { background-color: #f8f9fa; font-weight: 600; cursor: pointer; user-select: none; }
+        th:hover { background-color: var(--hover-bg); }
+        .filter-row input, .filter-row select { width: 90%; padding: 0.5rem; border: 1px solid var(--table-border); border-radius: 4px; }
+        tbody tr:hover { background-color: var(--hover-bg); }
+        tbody tr.selected { background-color: var(--selected-bg) !important; }
+        tbody tr.is-false-positive { background-color: var(--false-positive-bg); } /* Style for FP rows */
+        tbody tr.is-false-positive:hover { background-color: #f5dcd5; }
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; padding: 1rem; }
+        .pagination-container button { padding: 0.5rem 1rem; border: 1px solid var(--table-border); border-radius: 4px; background-color: var(--header-bg); cursor: pointer; }
+        .pagination-container button:disabled { cursor: not-allowed; opacity: 0.5; }
+    </style>
 </head>
 <body>
-<p id="Hello">Hello!</p>
-<p id="issueType"></p>
-<script>
-console.log("script Loaded!");
-console.log(AdaptavistBridgeContext.context);
 
-AdaptavistBridge.request({
-    url: `/rest/api/2/issue/${AdaptavistBridgeContext.context.issueKey}`,
-    type: 'GET'
-})
-    .then(issue => {
-        console.log("Issue Found!");
-        console.log('issue', issue)
-        document.getElementById("issueType").value = `${issue.key} is a ${issue.fields.issuetype.name} in ${issue.fields.status.name}`;
-    });
-</script>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Asset Management Dashboard</h1>
+        </header>
+
+        <main>
+            <div class="toolbar">
+                <button id="claimFalsePositive" class="action-button">Claim False Positive</button>
+                <button id="cloneJiraTicket" class="action-button">Clone Jira Ticket</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAll"></th>
+                            <th data-key="assetName">Asset Name</th>
+                            <th data-key="jiraTicket">Jira Ticket</th>
+                            <th data-key="cmsProductName">CMS Product Name</th>
+                            <th data-key="maxCriticality">Max Criticality</th>
+                            <th data-key="dueStatus">Due Status</th>
+                            <th data-key="scannedBy">Scanned By</th>
+                            <th data-key="environments">Environments</th>
+                            <th data-key="falsepositive">False Positive</th>
+                        </tr>
+                        <tr class="filter-row">
+                            <td></td>
+                            <td><input type="text" placeholder="Filter..." data-key="assetName"></td>
+                            <td><input type="text" placeholder="Filter..." data-key="jiraTicket"></td>
+                            <td><input type="text" placeholder="Filter..." data-key="cmsProductName"></td>
+                            <td><select data-key="maxCriticality"><option value="">All</option></select></td>
+                            <td><select data-key="dueStatus"><option value="">All</option></select></td>
+                            <td><input type="text" placeholder="Filter..." data-key="scannedBy"></td>
+                            <td><select data-key="environments"><option value="">All</option></select></td>
+                            <td>
+                                <select data-key="falsepositive">
+                                    <option value="">All</option>
+                                    <option value="true">true</option>
+                                    <option value="false">false</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </thead>
+                    <tbody id="asset-list">
+                        <!-- Asset data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-container">
+                <button id="prevPage">Previous</button>
+                <span id="pageInfo"></span>
+                <button id="nextPage">Next</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
